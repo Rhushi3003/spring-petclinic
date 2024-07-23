@@ -1,28 +1,20 @@
+# azure-pipelines.yml
+
 trigger:
-- main
+  branches:
+    include:
+      - main  # or master, depending on your default branch
 
 pool:
-  vmImage: 'ubuntu-latest'
-
-variables:
-  mavenOptions: '-DskipTests' # Options to pass to Maven
-  outputDir: 'target' # Directory where Maven outputs the JAR file
-  jarFileName: 'spring-petclinic.jar' # Name of the JAR file
+  vmImage: 'ubuntu-latest'  # Choose an appropriate VM image
 
 steps:
-- task: JavaToolInstaller@0
-  inputs:
-    versionSpec: '17'
-    jdkArchitectureOption: 'x64'
-    jdkSourceOption: 'PreInstalled'
-- task: Maven@4
+- task: Maven@3
   inputs:
     mavenPomFile: 'pom.xml'
     goals: 'clean package'
-  displayName: 'Build with Maven'
 
-- task: PublishPipelineArtifact@1
+- task: Maven@3
   inputs:
-     targetPath: '$(Build.SourcesDirectory)/$(outputDir)'
-     artifact: 'drop'
-     publishLocation: 'pipeline'
+    mavenPomFile: 'pom.xml'
+    goals: 'test'
