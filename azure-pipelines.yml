@@ -1,5 +1,6 @@
 # azure-pipelines.yml
 
+
 trigger:
   branches:
     include:
@@ -9,6 +10,11 @@ pool:
   vmImage: 'ubuntu-latest'  # Choose an appropriate VM image
 
 steps:
+- task: JavaToolInstaller@0
+  inputs:
+    versionSpec: '17'
+    jdkArchitectureOption: 'x64'
+    jdkSourceOption: 'PreInstalled'
 - task: Maven@3
   inputs:
     mavenPomFile: 'pom.xml'
