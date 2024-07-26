@@ -1,0 +1,93 @@
+trigger:
+- main
+
+pr:
+- main
+
+variables:
+  # Define common variables here
+  azureSubscription: 'your-azure-subscription'
+  resourceGroup: 'your-resource-group'
+  appName: 'your-app-name'
+
+stages:
+- stage: Dev
+  displayName: 'Deploy to Dev'
+  jobs:
+  - job: DevDeploy
+    displayName: 'Deploy to Development Environment'
+    steps:
+    - task: UseDotNet@2
+      inputs:
+        packageType: 'sdk'
+        version: '6.x'
+    - script: dotnet build
+      displayName: 'Build project'
+    - script: dotnet publish -c Release -o $(Build.ArtifactStagingDirectory)
+      displayName: 'Publish artifacts'
+    - task: AzureWebApp@1
+      inputs:
+        azureSubscription: $(azureSubscription)
+        appName: $(appName)-dev
+        package: $(Build.ArtifactStagingDirectory)/**/*.zip
+      displayName: 'Deploy to Azure App Service'
+
+- stage: Test
+  displayName: 'Deploy to Test'
+  dependsOn: Dev
+  condition: succeeded()
+  jobs:
+  - job: TestDeploy
+    displayName: 'Deploy to Test Environment'
+    steps:
+    - task: AzureWebApp@1
+      inputs:
+        azureSubscription: $(azureSubscription)
+        appName: $(appName)-test
+        package: $(Build.ArtifactStagingDirectory)/**/*.zip
+      displayName: 'Deploy to Azure App Service'
+
+- stage: QA
+  displayName: 'Deploy to QA'
+  dependsOn: Test
+  condition: succeeded()
+  jobs:
+  - job: QADeply
+    displayName: 'Deploy to QA Environment'
+    steps:
+    - task: AzureWebApp@1
+      inputs:
+        azureSubscription: $(azureSubscription)
+        appName: $(appName)-qa
+        package: $(Build.ArtifactStagingDirectory)/**/*.zip
+      displayName: 'Deploy to Azure App Service'
+
+- stage: Preprod
+  displayName: 'Deploy to Preprod'
+  dependsOn: QA
+  condition: succeeded()
+  jobs:
+  - job: PreprodDeploy
+    displayName: 'Deploy to Preprod Environment'
+    steps:
+    - task: AzureWebApp@1
+      inputs:
+        azureSubscription: $(azureSubscription)
+        appName: $(appName)-preprod
+        package: $(Build.ArtifactStagingDirectory)/**/*.zip
+      displayName: 'Deploy to Azure App Service'
+
+- stage: Prod
+  displayName: 'Deploy to Prod'
+  dependsOn: Preprod
+  condition: succeeded()
+  jobs:
+  - job: ProdDeploy
+    displayName: 'Deploy to Production Environment'
+    steps:
+    - task: AzureWebApp@1
+      inputs:
+        azureSubscription: $(azureSubscription)
+        appName: $(appName)
+        package: $(Build.ArtifactStagingDirectory)/**/*.zip
+      displayName: 'Deploy to Azure App Service'
